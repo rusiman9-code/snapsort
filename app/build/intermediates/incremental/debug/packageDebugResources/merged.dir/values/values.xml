@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="accent">#0369A1</color>
+    <color name="white">#FFFFFF</color>
+    <string name="action_copy_text">Copy Text</string>
+    <string name="action_create_collection">+ New Collection</string>
+    <string name="action_delete">Delete</string>
+    <string name="action_move">Move to…</string>
+    <string name="action_share">Share</string>
+    <string name="action_skip_sort">Skip</string>
+    <string name="action_web_search">Web Search</string>
+    <string name="app_name">SnapSort</string>
+    <string name="collections_title">Collections</string>
+    <string name="default_collection_unsorted">Unsorted</string>
+    <string name="empty_home_desc">Tap the floating button anywhere on your screen to snap and organize screenshots instantly.</string>
+    <string name="empty_home_title">No screenshots yet</string>
+    <string name="ocr_no_text">No text detected</string>
+    <string name="ocr_recognizing">Scanning text…</string>
+    <string name="quick_access_title">Quick Access</string>
+    <string name="search_placeholder">Search words in screenshots…</string>
+    <style name="Theme.SnapSort" parent="android:Theme.Material.Light.NoActionBar">
+        <item name="android:statusBarColor">#FFFFFF</item>
+        <item name="android:windowLightStatusBar">true</item>
+        <item name="android:navigationBarColor">#FFFFFF</item>
+        <item name="android:windowLightNavigationBar">true</item>
+    </style>
+</resources>

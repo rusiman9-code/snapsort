@@ -1,0 +1,28 @@
+feature,area,priority,original,clone,notes
+Storage permission onboarding flow,onboarding,must,yes,yes,Implemented in OnboardingScreen (S01)
+Floating GO capture button overlay,capture,must,yes,yes,Implemented in FloatingCaptureService using SYSTEM_ALERT_WINDOW (S05)
+One-tap screenshot capture,capture,must,yes,yes,Integrated with MediaProjection and RequestCaptureActivity
+Post-capture sorting popup panel,sorting,must,yes,yes,Implemented in SortingPanelSheet with instant category chips (S06)
+Default Unsorted collection fallback,sorting,must,yes,yes,Seeded as default_unsorted in AppDatabase
+Quick Access horizontal carousel,gallery,must,yes,yes,Implemented via LazyRow in HomeScreen (S02)
+Collection grid view with item counts,gallery,must,yes,yes,Implemented via 2-column grid with dynamic count in HomeScreen (S02)
+Full-screen screenshot viewer,viewer,must,yes,yes,Implemented in DetailViewerScreen (S04)
+On-device OCR text recognition,ocr,must,yes,yes,Implemented locally using Google ML Kit Vision Text Recognition
+Copy text from screenshot to clipboard,ocr,must,yes,yes,Implemented via ClipboardManager in DetailViewerScreen (S04)
+Full-text search across screenshots,search,must,yes,yes,Implemented reactive search query joining screenshot_contents in SearchScreen (S07)
+Create new collection with custom name,collections,must,yes,yes,Implemented via AlertDialog in HomeScreen and SortingPanelSheet (S08)
+Move screenshot to another collection,collections,must,yes,yes,Implemented via batch move dialog in CollectionDetailScreen (S03)
+Delete screenshot from storage permanently,gallery,must,yes,yes,Implemented in CollectionDetailScreen and DetailViewerScreen
+Rename collection,collections,should,yes,yes,Implemented in CollectionDao and repository
+Assign collection color identifier,collections,should,yes,yes,Implemented with custom category palette in Theme.kt
+Web search action from detected OCR text,ocr,should,yes,yes,Implemented via Intent.ACTION_WEB_SEARCH in DetailViewerScreen (S04)
+Batch multi-select mode,gallery,should,yes,yes,Implemented in CollectionDetailScreen with selected count and batch actions (S03)
+Toggle floating button on/off in settings,settings,should,yes,yes,Implemented in SettingsScreen (S10)
+Toggle "Ask to sort" preference,settings,should,yes,yes,Implemented in SettingsScreen (S10)
+Screenshot metadata info dialog,viewer,should,yes,yes,Implemented in DetailViewerScreen info modal (S09)
+Collection summary info dialog,collections,could,yes,yes,Implemented in HomeScreen header & collection cards
+Share screenshot to third-party apps,sharing,could,yes,yes,Implemented via Intent.ACTION_SEND in DetailViewerScreen
+Direct text share from OCR blocks,sharing,could,yes,yes,Implemented via Intent chooser in DetailViewerScreen (S04)
+Drag floating button to dismiss target,capture,could,yes,yes,Implemented via MotionEvent touch listener in FloatingCaptureService (S05)
+Mozilla Telemetry & Scryer Firebase backend,telemetry,skip,yes,skip,Replaced by 100% private offline architecture
+Mozilla Firefox branding and trademarks,branding,skip,yes,skip,Replaced by original clean SnapSort identity
