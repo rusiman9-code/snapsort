@@ -31,6 +31,89 @@ class ScreenshotRepository(
         return screenshotDao.getContent(screenshotId)
     }
 
+    suspend fun syncGalleryScreenshots(): Int = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+        val projection = arrayOf(
+            android.provider.MediaStore.Images.Media._ID,
+            android.provider.MediaStore.Images.Media.DISPLAY_NAME,
+            android.provider.MediaStore.Images.Media.SIZE,
+            android.provider.MediaStore.Images.Media.WIDTH,
+            android.provider.MediaStore.Images.Media.HEIGHT,
+            android.provider.MediaStore.Images.Media.DATE_MODIFIED
+        )
+
+        // Broader search: checks bucket name, display name, or path for Screenshot/Tangkapan layar/SnapSort
+        val selection = """
+            ${android.provider.MediaStore.Images.Media.BUCKET_DISPLAY_NAME} LIKE ? OR 
+            ${android.provider.MediaStore.Images.Media.BUCKET_DISPLAY_NAME} LIKE ? OR 
+            ${android.provider.MediaStore.Images.Media.DISPLAY_NAME} LIKE ? OR 
+            ${android.provider.MediaStore.Images.Media.DISPLAY_NAME} LIKE ? OR
+            ${android.provider.MediaStore.Images.Media.DISPLAY_NAME} LIKE ? OR
+            ${android.provider.MediaStore.Images.Media.DATA} LIKE ?
+        """.trimIndent()
+
+        val selectionArgs = arrayOf(
+            "%Screenshot%",
+            "%Tangkapan%",
+            "%Screenshot%",
+            "%screenshot%",
+            "%SnapSort%",
+            "%Screenshot%"
+        )
+
+        val sortOrder = "${android.provider.MediaStore.Images.Media.DATE_MODIFIED} DESC"
+        var importedCount = 0
+
+        try {
+            context.contentResolver.query(
+                android.provider.MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
+                projection,
+                selection,
+                selectionArgs,
+                sortOrder
+            )?.use { cursor ->
+                val idCol = cursor.getColumnIndexOrThrow(android.provider.MediaStore.Images.Media._ID)
+                val nameCol = cursor.getColumnIndexOrThrow(android.provider.MediaStore.Images.Media.DISPLAY_NAME)
+                val sizeCol = cursor.getColumnIndexOrThrow(android.provider.MediaStore.Images.Media.SIZE)
+                val widthCol = cursor.getColumnIndexOrThrow(android.provider.MediaStore.Images.Media.WIDTH)
+                val heightCol = cursor.getColumnIndexOrThrow(android.provider.MediaStore.Images.Media.HEIGHT)
+                val dateCol = cursor.getColumnIndexOrThrow(android.provider.MediaStore.Images.Media.DATE_MODIFIED)
+
+                while (cursor.moveToNext()) {
+                    val mediaId = cursor.getLong(idCol)
+                    val uri = android.content.ContentUris.withAppendedId(
+                        android.provider.MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
+                        mediaId
+                    ).toString()
+
+                    val name = cursor.getString(nameCol) ?: "Screenshot"
+                    val size = cursor.getLong(sizeCol)
+                    val w = cursor.getInt(widthCol)
+                    val h = cursor.getInt(heightCol)
+                    val date = cursor.getLong(dateCol) * 1000L
+
+                    if (screenshotDao.getScreenshotByUri(uri) == null) {
+                        val entity = ScreenshotEntity(
+                            id = java.util.UUID.randomUUID().toString(),
+                            fileUri = uri,
+                            fileName = name,
+                            fileSize = size,
+                            width = w,
+                            height = h,
+                            takenAt = if (date > 0) date else System.currentTimeMillis(),
+                            collectionId = "default_unsorted",
+                            ocrStatus = "PENDING"
+                        )
+                        screenshotDao.insert(entity)
+                        importedCount++
+                    }
+                }
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+        importedCount
+    }
+
     fun searchByText(query: String): Flow<List<ScreenshotEntity>> {
         return screenshotDao.searchByText(query)
     }

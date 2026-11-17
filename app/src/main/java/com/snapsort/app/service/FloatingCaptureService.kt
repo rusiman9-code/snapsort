@@ -1,25 +1,42 @@
 package com.snapsort.app.service
 
+import android.annotation.SuppressLint
 import android.app.*
+import android.content.ContentValues
 import android.content.Context
 import android.content.Intent
+import android.content.pm.ServiceInfo
+import android.graphics.Bitmap
 import android.graphics.Color
 import android.graphics.PixelFormat
 import android.graphics.drawable.GradientDrawable
-import android.os.Build
-import android.os.IBinder
+import android.hardware.display.DisplayManager
+import android.hardware.display.VirtualDisplay
+import android.media.ImageReader
+import android.media.projection.MediaProjection
+import android.media.projection.MediaProjectionManager
+import android.net.Uri
+import android.os.*
+import android.provider.MediaStore
 import android.view.Gravity
 import android.view.MotionEvent
 import android.view.View
 import android.view.WindowManager
 import android.widget.ImageView
+import android.widget.Toast
 import androidx.core.app.NotificationCompat
 import com.snapsort.app.MainActivity
+import com.snapsort.app.SnapSortApplication
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 class FloatingCaptureService : Service() {
 
     private lateinit var windowManager: WindowManager
     private var floatingView: View? = null
+    private val serviceScope = CoroutineScope(Dispatchers.Main)
 
     companion object {
         const val ACTION_START_PROJECTION = "com.snapsort.app.action.START_PROJECTION"
@@ -27,6 +44,8 @@ class FloatingCaptureService : Service() {
         const val EXTRA_RESULT_DATA = "extra_result_data"
         private const val NOTIFICATION_ID = 901
         private const val CHANNEL_ID = "snapsort_capture_channel"
+
+        var mediaProjection: MediaProjection? = null
     }
 
     override fun onBind(intent: Intent?): IBinder? = null
@@ -35,11 +54,30 @@ class FloatingCaptureService : Service() {
         super.onCreate()
         windowManager = getSystemService(Context.WINDOW_SERVICE) as WindowManager
         createNotificationChannel()
-        startForeground(NOTIFICATION_ID, buildForegroundNotification())
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            startForeground(
+                NOTIFICATION_ID,
+                buildForegroundNotification(),
+                ServiceInfo.FOREGROUND_SERVICE_TYPE_MEDIA_PROJECTION
+            )
+        } else {
+            startForeground(NOTIFICATION_ID, buildForegroundNotification())
+        }
+
         createFloatingButton()
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+        if (intent?.action == ACTION_START_PROJECTION) {
+            val resultCode = intent.getIntExtra(EXTRA_RESULT_CODE, Activity.RESULT_CANCELED)
+            val data = intent.getParcelableExtra<Intent>(EXTRA_RESULT_DATA)
+            if (resultCode == Activity.RESULT_OK && data != null) {
+                val mpManager = getSystemService(Context.MEDIA_PROJECTION_SERVICE) as MediaProjectionManager
+                mediaProjection = mpManager.getMediaProjection(resultCode, data)
+                Toast.makeText(this, "Capture ready! Tap button to snap", Toast.LENGTH_SHORT).show()
+            }
+        }
         return START_STICKY
     }
 
@@ -47,10 +85,9 @@ class FloatingCaptureService : Service() {
         if (floatingView != null) return
 
         val button = ImageView(this).apply {
-            // Circular accent button
             val shape = GradientDrawable().apply {
                 shape = GradientDrawable.OVAL
-                setColor(0xFF0369A1.toInt()) // Accent blue
+                setColor(0xFF0369A1.toInt()) // SnapSort accent
                 setStroke(4, Color.WHITE)
             }
             background = shape
@@ -68,18 +105,17 @@ class FloatingCaptureService : Service() {
         }
 
         val params = WindowManager.LayoutParams(
-            140,
-            140,
+            150,
+            150,
             layoutType,
             WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS,
             PixelFormat.TRANSLUCENT
         ).apply {
             gravity = Gravity.TOP or Gravity.START
             x = 30
-            y = 300
+            y = 350
         }
 
-        // Draggable touch listener
         button.setOnTouchListener(object : View.OnTouchListener {
             private var initialX = 0
             private var initialY = 0
@@ -100,7 +136,7 @@ class FloatingCaptureService : Service() {
                     MotionEvent.ACTION_MOVE -> {
                         val dx = event.rawX - initialTouchX
                         val dy = event.rawY - initialTouchY
-                        if (Math.abs(dx) > 10 || Math.abs(dy) > 10) {
+                        if (Math.abs(dx) > 15 || Math.abs(dy) > 15) {
                             isClick = false
                         }
                         params.x = initialX + dx.toInt()
@@ -110,7 +146,7 @@ class FloatingCaptureService : Service() {
                     }
                     MotionEvent.ACTION_UP -> {
                         if (isClick) {
-                            onCaptureButtonClicked()
+                            captureScreen()
                         }
                         return true
                     }
@@ -127,13 +163,152 @@ class FloatingCaptureService : Service() {
         }
     }
 
-    private fun onCaptureButtonClicked() {
-        // Launch main app with trigger capture / sorting panel request
-        val intent = Intent(this, MainActivity::class.java).apply {
-            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP
-            putExtra("trigger_sort_prompt", true)
+    private fun captureScreen() {
+        val proj = mediaProjection
+        if (proj == null) {
+            // Need permission token first
+            val reqIntent = Intent(this, RequestCaptureActivity::class.java).apply {
+                flags = Intent.FLAG_ACTIVITY_NEW_TASK
+            }
+            startActivity(reqIntent)
+            return
         }
-        startActivity(intent)
+
+        // Hide floating button temporarily so it doesn't appear in the screenshot
+        floatingView?.visibility = View.INVISIBLE
+
+        Handler(Looper.getMainLooper()).postDelayed({
+            executeScreenCapture(proj)
+        }, 120)
+    }
+
+    @SuppressLint("WrongConstant")
+    private fun executeScreenCapture(proj: MediaProjection) {
+        val metrics = resources.displayMetrics
+        val width = metrics.widthPixels
+        val height = metrics.heightPixels
+        val density = metrics.densityDpi
+
+        val imageReader = ImageReader.newInstance(width, height, PixelFormat.RGBA_8888, 2)
+        val handlerThread = HandlerThread("ScreenCaptureThread").apply { start() }
+        val handler = Handler(handlerThread.looper)
+
+        var virtualDisplay: VirtualDisplay? = null
+
+        imageReader.setOnImageAvailableListener(object : ImageReader.OnImageAvailableListener {
+            private var captured = false
+
+            override fun onImageAvailable(reader: ImageReader) {
+                if (captured) return
+                captured = true
+
+                val image = reader.acquireLatestImage() ?: return
+                val planes = image.planes
+                val buffer = planes[0].buffer
+                val pixelStride = planes[0].pixelStride
+                val rowStride = planes[0].rowStride
+                val rowPadding = rowStride - pixelStride * width
+
+                val bitmap = Bitmap.createBitmap(
+                    width + rowPadding / pixelStride,
+                    height,
+                    Bitmap.Config.ARGB_8888
+                )
+                bitmap.copyPixelsFromBuffer(buffer)
+                val cleanBitmap = if (rowPadding == 0) bitmap else Bitmap.createBitmap(bitmap, 0, 0, width, height)
+
+                image.close()
+                virtualDisplay?.release()
+                imageReader.close()
+                handlerThread.quitSafely()
+
+                // Re-show floating button
+                Handler(Looper.getMainLooper()).post {
+                    floatingView?.visibility = View.VISIBLE
+                    vibrateFeedback()
+                }
+
+                // Save bitmap and notify app
+                serviceScope.launch {
+                    val savedUri = saveBitmapToMediaStore(cleanBitmap)
+                    if (savedUri != null) {
+                        val repository = (application as SnapSortApplication).repository
+                        val entity = repository.saveScreenshot(
+                            fileUri = savedUri.toString(),
+                            fileName = "Screenshot_${System.currentTimeMillis()}.png",
+                            fileSize = 0L,
+                            width = width,
+                            height = height,
+                            collectionId = "default_unsorted"
+                        )
+
+                        // Launch sorting prompt in app
+                        val launchIntent = Intent(this@FloatingCaptureService, MainActivity::class.java).apply {
+                            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP
+                            putExtra("trigger_sort_prompt", true)
+                            putExtra("captured_id", entity.id)
+                        }
+                        startActivity(launchIntent)
+                    }
+                }
+            }
+        }, handler)
+
+        virtualDisplay = proj.createVirtualDisplay(
+            "SnapSortCapture",
+            width,
+            height,
+            density,
+            DisplayManager.VIRTUAL_DISPLAY_FLAG_AUTO_MIRROR,
+            imageReader.surface,
+            null,
+            handler
+        )
+    }
+
+    private suspend fun saveBitmapToMediaStore(bitmap: Bitmap): Uri? = withContext(Dispatchers.IO) {
+        val fileName = "Screenshot_${System.currentTimeMillis()}.png"
+        val values = ContentValues().apply {
+            put(MediaStore.Images.Media.DISPLAY_NAME, fileName)
+            put(MediaStore.Images.Media.MIME_TYPE, "image/png")
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                put(MediaStore.Images.Media.RELATIVE_PATH, Environment.DIRECTORY_PICTURES + "/Screenshots")
+                put(MediaStore.Images.Media.IS_PENDING, 1)
+            }
+        }
+
+        val uri = contentResolver.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, values)
+        if (uri != null) {
+            contentResolver.openOutputStream(uri)?.use { stream ->
+                bitmap.compress(Bitmap.CompressFormat.PNG, 100, stream)
+            }
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                values.clear()
+                values.put(MediaStore.Images.Media.IS_PENDING, 0)
+                contentResolver.update(uri, values, null, null)
+            }
+        }
+        uri
+    }
+
+    private fun vibrateFeedback() {
+        try {
+            val vibrator = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                val manager = getSystemService(Context.VIBRATOR_MANAGER_SERVICE) as VibratorManager
+                manager.defaultVibrator
+            } else {
+                @Suppress("DEPRECATION")
+                getSystemService(Context.VIBRATOR_SERVICE) as Vibrator
+            }
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                vibrator.vibrate(VibrationEffect.createOneShot(50, VibrationEffect.DEFAULT_AMPLITUDE))
+            } else {
+                @Suppress("DEPRECATION")
+                vibrator.vibrate(50)
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
     }
 
     private fun createNotificationChannel() {
@@ -158,7 +333,7 @@ class FloatingCaptureService : Service() {
         )
 
         return NotificationCompat.Builder(this, CHANNEL_ID)
-            .setContentTitle("SnapSort is ready")
+            .setContentTitle("SnapSort Capture is active")
             .setContentText("Tap the floating button to capture and sort screenshots")
             .setSmallIcon(android.R.drawable.ic_menu_camera)
             .setContentIntent(pendingIntent)
@@ -175,5 +350,7 @@ class FloatingCaptureService : Service() {
                 e.printStackTrace()
             }
         }
+        mediaProjection?.stop()
+        mediaProjection = null
     }
 }

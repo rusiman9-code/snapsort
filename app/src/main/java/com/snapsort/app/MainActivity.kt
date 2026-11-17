@@ -1,10 +1,17 @@
 package com.snapsort.app
 
+import android.Manifest
 import android.content.Intent
+import android.content.pm.PackageManager
+import android.os.Build
 import android.os.Bundle
+import android.widget.Toast
 import androidx.activity.ComponentActivity
+import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.runtime.*
+import androidx.core.content.ContextCompat
 import com.snapsort.app.ui.screens.*
 import com.snapsort.app.ui.theme.SnapSortTheme
 import kotlinx.coroutines.launch
@@ -30,6 +37,7 @@ class MainActivity : ComponentActivity() {
                 val scope = rememberCoroutineScope()
                 var currentScreen by remember { mutableStateOf<Screen>(Screen.Home) }
                 var showSortingSheet by remember { mutableStateOf(false) }
+                var pendingCapturedId by remember { mutableStateOf<String?>(null) }
 
                 // State from Repository
                 val recentScreenshots by repository.recentScreenshots.collectAsState(initial = emptyList())
@@ -39,9 +47,62 @@ class MainActivity : ComponentActivity() {
                 var searchQuery by remember { mutableStateOf("") }
                 val searchResults by repository.searchByText(searchQuery).collectAsState(initial = emptyList())
 
+                // Function to sync gallery
+                fun doSyncGallery() {
+                    scope.launch {
+                        val imported = repository.syncGalleryScreenshots()
+                        val msg = if (imported > 0) {
+                            "Imported $imported new screenshots from gallery"
+                        } else {
+                            "Gallery is up to date"
+                        }
+                        Toast.makeText(this@MainActivity, msg, Toast.LENGTH_SHORT).show()
+                    }
+                }
+
+                // Storage permission launcher
+                val storagePermissionLauncher = rememberLauncherForActivityResult(
+                    ActivityResultContracts.RequestMultiplePermissions()
+                ) { permissions ->
+                    val granted = permissions.values.any { it }
+                    if (granted) {
+                        doSyncGallery()
+                    } else {
+                        Toast.makeText(
+                            this@MainActivity,
+                            "Storage permission needed to read screenshots from gallery",
+                            Toast.LENGTH_LONG
+                        ).show()
+                    }
+                }
+
+                // Check permissions on launch
+                LaunchedEffect(Unit) {
+                    val permissionsToRequest = mutableListOf<String>()
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                        if (ContextCompat.checkSelfPermission(this@MainActivity, Manifest.permission.READ_MEDIA_IMAGES)
+                            != PackageManager.PERMISSION_GRANTED) {
+                            permissionsToRequest.add(Manifest.permission.READ_MEDIA_IMAGES)
+                        }
+                    } else {
+                        if (ContextCompat.checkSelfPermission(this@MainActivity, Manifest.permission.READ_EXTERNAL_STORAGE)
+                            != PackageManager.PERMISSION_GRANTED) {
+                            permissionsToRequest.add(Manifest.permission.READ_EXTERNAL_STORAGE)
+                        }
+                    }
+
+                    if (permissionsToRequest.isNotEmpty()) {
+                        storagePermissionLauncher.launch(permissionsToRequest.toTypedArray())
+                    } else {
+                        // Already granted, auto sync
+                        scope.launch { repository.syncGalleryScreenshots() }
+                    }
+                }
+
                 // Handle incoming Intent to trigger sorting prompt
                 LaunchedEffect(intent) {
                     if (intent.getBooleanExtra("trigger_sort_prompt", false)) {
+                        pendingCapturedId = intent.getStringExtra("captured_id")
                         showSortingSheet = true
                     }
                 }
@@ -67,6 +128,9 @@ class MainActivity : ComponentActivity() {
                             },
                             onTriggerCapture = {
                                 showSortingSheet = true
+                            },
+                            onSyncGallery = {
+                                doSyncGallery()
                             }
                         )
                     }
@@ -120,7 +184,8 @@ class MainActivity : ComponentActivity() {
                     }
                     is Screen.Settings -> {
                         SettingsScreen(
-                            onBack = { currentScreen = Screen.Home }
+                            onBack = { currentScreen = Screen.Home },
+                            onSyncGallery = { doSyncGallery() }
                         )
                     }
                 }
@@ -129,15 +194,26 @@ class MainActivity : ComponentActivity() {
                 if (showSortingSheet) {
                     SortingPanelSheet(
                         collections = collections,
-                        onSelectCollection = { _ ->
+                        onSelectCollection = { colId ->
+                            pendingCapturedId?.let { capId ->
+                                scope.launch {
+                                    repository.moveScreenshots(listOf(capId), colId)
+                                    pendingCapturedId = null
+                                }
+                            }
                             showSortingSheet = false
                         },
                         onSkip = {
+                            pendingCapturedId = null
                             showSortingSheet = false
                         },
                         onCreateCollection = { name ->
                             scope.launch {
-                                repository.createCollection(name, 0xFF0284C7.toInt())
+                                val newId = repository.createCollection(name, 0xFF0284C7.toInt())
+                                pendingCapturedId?.let { capId ->
+                                    repository.moveScreenshots(listOf(capId), newId)
+                                    pendingCapturedId = null
+                                }
                             }
                             showSortingSheet = false
                         }

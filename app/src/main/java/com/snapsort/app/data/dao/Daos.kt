@@ -53,6 +53,9 @@ interface ScreenshotDao {
     @Query("SELECT * FROM screenshots WHERE id = :id LIMIT 1")
     suspend fun getScreenshotById(id: String): ScreenshotEntity?
 
+    @Query("SELECT * FROM screenshots WHERE file_uri = :uri LIMIT 1")
+    suspend fun getScreenshotByUri(uri: String): ScreenshotEntity?
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insert(screenshot: ScreenshotEntity): Long
 

@@ -11,6 +11,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.CameraAlt
+import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.*
@@ -39,7 +40,8 @@ fun HomeScreen(
     onNavigateSearch: () -> Unit,
     onNavigateSettings: () -> Unit,
     onCreateCollection: (String) -> Unit,
-    onTriggerCapture: () -> Unit
+    onTriggerCapture: () -> Unit,
+    onSyncGallery: () -> Unit = {}
 ) {
     var showAddDialog by remember { mutableStateOf(false) }
     var newCollectionName by remember { mutableStateOf("") }
@@ -75,6 +77,13 @@ fun HomeScreen(
                     }
                 },
                 actions = {
+                    IconButton(onClick = onSyncGallery) {
+                        Icon(
+                            imageVector = Icons.Default.Refresh,
+                            contentDescription = "Sync gallery screenshots",
+                            tint = ColorText
+                        )
+                    }
                     IconButton(onClick = onNavigateSearch) {
                         Icon(
                             imageVector = Icons.Default.Search,

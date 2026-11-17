@@ -23,7 +23,8 @@ import com.snapsort.app.ui.theme.*
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SettingsScreen(
-    onBack: () -> Unit
+    onBack: () -> Unit,
+    onSyncGallery: () -> Unit = {}
 ) {
     val context = LocalContext.current
     var isOverlayEnabled by remember {
@@ -148,6 +149,49 @@ fun SettingsScreen(
                         onCheckedChange = { askToSort = it },
                         colors = SwitchDefaults.colors(checkedThumbColor = ColorAccent)
                     )
+                }
+            }
+
+            item { HorizontalDivider(color = ColorBorder, modifier = Modifier.padding(vertical = 12.dp)) }
+
+            item {
+                Text(
+                    text = "Gallery & Storage",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = ColorAccent,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.padding(horizontal = 20.dp, vertical = 12.dp)
+                )
+            }
+
+            item {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable { onSyncGallery() }
+                        .padding(horizontal = 20.dp, vertical = 16.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            text = "Sync Device Screenshots",
+                            style = MaterialTheme.typography.bodyLarge,
+                            fontWeight = FontWeight.SemiBold,
+                            color = ColorText
+                        )
+                        Text(
+                            text = "Scan and import screenshots from your phone gallery into SnapSort.",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = ColorTextMuted
+                        )
+                    }
+                    Button(
+                        onClick = onSyncGallery,
+                        colors = ButtonDefaults.buttonColors(containerColor = ColorAccentSubtle)
+                    ) {
+                        Text("Sync Now", color = ColorAccent, fontWeight = FontWeight.Bold)
+                    }
                 }
             }
 

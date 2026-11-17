@@ -393,6 +393,62 @@ public final class ScreenshotDao_Impl implements ScreenshotDao {
   }
 
   @Override
+  public Object getScreenshotByUri(final String uri,
+      final Continuation<? super ScreenshotEntity> $completion) {
+    final String _sql = "SELECT * FROM screenshots WHERE file_uri = ? LIMIT 1";
+    final RoomSQLiteQuery _statement = RoomSQLiteQuery.acquire(_sql, 1);
+    int _argIndex = 1;
+    _statement.bindString(_argIndex, uri);
+    final CancellationSignal _cancellationSignal = DBUtil.createCancellationSignal();
+    return CoroutinesRoom.execute(__db, false, _cancellationSignal, new Callable<ScreenshotEntity>() {
+      @Override
+      @Nullable
+      public ScreenshotEntity call() throws Exception {
+        final Cursor _cursor = DBUtil.query(__db, _statement, false, null);
+        try {
+          final int _cursorIndexOfId = CursorUtil.getColumnIndexOrThrow(_cursor, "id");
+          final int _cursorIndexOfFileUri = CursorUtil.getColumnIndexOrThrow(_cursor, "file_uri");
+          final int _cursorIndexOfFileName = CursorUtil.getColumnIndexOrThrow(_cursor, "file_name");
+          final int _cursorIndexOfFileSize = CursorUtil.getColumnIndexOrThrow(_cursor, "file_size");
+          final int _cursorIndexOfWidth = CursorUtil.getColumnIndexOrThrow(_cursor, "width");
+          final int _cursorIndexOfHeight = CursorUtil.getColumnIndexOrThrow(_cursor, "height");
+          final int _cursorIndexOfTakenAt = CursorUtil.getColumnIndexOrThrow(_cursor, "taken_at");
+          final int _cursorIndexOfCollectionId = CursorUtil.getColumnIndexOrThrow(_cursor, "collection_id");
+          final int _cursorIndexOfOcrStatus = CursorUtil.getColumnIndexOrThrow(_cursor, "ocr_status");
+          final ScreenshotEntity _result;
+          if (_cursor.moveToFirst()) {
+            final String _tmpId;
+            _tmpId = _cursor.getString(_cursorIndexOfId);
+            final String _tmpFileUri;
+            _tmpFileUri = _cursor.getString(_cursorIndexOfFileUri);
+            final String _tmpFileName;
+            _tmpFileName = _cursor.getString(_cursorIndexOfFileName);
+            final long _tmpFileSize;
+            _tmpFileSize = _cursor.getLong(_cursorIndexOfFileSize);
+            final int _tmpWidth;
+            _tmpWidth = _cursor.getInt(_cursorIndexOfWidth);
+            final int _tmpHeight;
+            _tmpHeight = _cursor.getInt(_cursorIndexOfHeight);
+            final long _tmpTakenAt;
+            _tmpTakenAt = _cursor.getLong(_cursorIndexOfTakenAt);
+            final String _tmpCollectionId;
+            _tmpCollectionId = _cursor.getString(_cursorIndexOfCollectionId);
+            final String _tmpOcrStatus;
+            _tmpOcrStatus = _cursor.getString(_cursorIndexOfOcrStatus);
+            _result = new ScreenshotEntity(_tmpId,_tmpFileUri,_tmpFileName,_tmpFileSize,_tmpWidth,_tmpHeight,_tmpTakenAt,_tmpCollectionId,_tmpOcrStatus);
+          } else {
+            _result = null;
+          }
+          return _result;
+        } finally {
+          _cursor.close();
+          _statement.release();
+        }
+      }
+    }, $completion);
+  }
+
+  @Override
   public Flow<List<ScreenshotEntity>> searchByText(final String query) {
     final String _sql = "\n"
             + "        SELECT s.* FROM screenshots s\n"
