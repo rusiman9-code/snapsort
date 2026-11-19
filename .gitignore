@@ -1,23 +1,21 @@
-*.iml
-.gradle
-/local.properties
+# Gradle files
+.gradle/
+build/
 app/build/
 *.apk
+*.aab
+
+# Local configuration file (sdk path, etc)
+local.properties
+
+# Log files
+*.log
 .system_generated/
 
-/.idea/caches
-/.idea/libraries
-/.idea/modules.xml
-/.idea/workspace.xml
-/.idea/navEditor.xml
-/.idea/assetWizardSettings.xml
+# Android Studio / IntelliJ IDEA
+.idea/
+*.iml
 .DS_Store
-/build
 /captures
 .externalNativeBuild
 .cxx
-local.properties
-app/build/
-*.apk
-.system_generated/
-
