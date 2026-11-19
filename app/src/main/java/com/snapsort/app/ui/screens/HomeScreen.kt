@@ -26,6 +26,7 @@ import androidx.compose.ui.unit.sp
 import com.snapsort.app.data.model.CollectionWithCount
 import com.snapsort.app.data.model.ScreenshotEntity
 import com.snapsort.app.ui.components.AddCollectionCard
+import com.snapsort.app.ui.components.AppLogo
 import com.snapsort.app.ui.components.CollectionCard
 import com.snapsort.app.ui.components.ScreenshotCard
 import com.snapsort.app.ui.theme.*
@@ -52,22 +53,9 @@ fun HomeScreen(
                 title = {
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        horizontalArrangement = Arrangement.spacedBy(10.dp)
                     ) {
-                        Box(
-                            modifier = Modifier
-                                .size(28.dp)
-                                .clip(RoundedCornerShape(8.dp))
-                                .background(ColorAccent),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Text(
-                                text = "S",
-                                color = Color.White,
-                                fontWeight = FontWeight.ExtraBold,
-                                fontSize = 18.sp
-                            )
-                        }
+                        AppLogo(size = 32.dp)
                         Text(
                             text = "SnapSort",
                             style = MaterialTheme.typography.titleLarge,

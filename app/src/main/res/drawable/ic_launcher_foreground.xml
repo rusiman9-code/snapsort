@@ -1,12 +1,116 @@
+<?xml version="1.0" encoding="utf-8"?>
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:aapt="http://schemas.android.com/aapt"
     android:width="108dp"
     android:height="108dp"
     android:viewportWidth="108"
     android:viewportHeight="108">
+
+    <!-- Secondary (Back) Card representing organized screenshots stack -->
     <path
-        android:fillColor="#0369A1"
-        android:pathData="M30,30h48v48h-48z" />
+        android:pathData="M43,29 L71,29 C74.3,29 77,31.7 77,35 L77,69 C77,72.3 74.3,75 71,75 L43,75 C39.7,75 37,72.3 37,69 L37,35 C37,31.7 39.7,29 43,29 Z"
+        android:fillColor="#38FFFFFF" />
     <path
-        android:fillColor="#FFFFFF"
-        android:pathData="M42,42h24v24h-24z" />
+        android:pathData="M43,29 L71,29 C74.3,29 77,31.7 77,35 L77,69 C77,72.3 74.3,75 71,75 L43,75 C39.7,75 37,72.3 37,69 L37,35 C37,31.7 39.7,29 43,29 Z"
+        android:strokeColor="#66BAE6FD"
+        android:strokeWidth="1.5" />
+
+    <!-- Primary (Front) Card representing the active capture -->
+    <path
+        android:pathData="M33,35 L65,35 C68.3,35 71,37.7 71,41 L71,77 C71,80.3 68.3,83 65,83 L33,83 C29.7,83 27,80.3 27,77 L27,41 C27,37.7 29.7,35 33,35 Z">
+        <aapt:attr name="android:fillColor">
+            <gradient
+                android:startX="27"
+                android:startY="35"
+                android:endX="71"
+                android:endY="83"
+                android:type="linear">
+                <item android:offset="0.0" android:color="#FFFFFF" />
+                <item android:offset="1.0" android:color="#F0F9FF" />
+            </gradient>
+        </aapt:attr>
+    </path>
+    <path
+        android:pathData="M33,35 L65,35 C68.3,35 71,37.7 71,41 L71,77 C71,80.3 68.3,83 65,83 L33,83 C29.7,83 27,80.3 27,77 L27,41 C27,37.7 29.7,35 33,35 Z"
+        android:strokeColor="#BAE6FD"
+        android:strokeWidth="1.2" />
+
+    <!-- Front card screen header notch / status indicator -->
+    <path
+        android:pathData="M45,39 L53,39"
+        android:strokeColor="#CBD5E1"
+        android:strokeWidth="2"
+        android:strokeLineCap="round" />
+
+    <!-- Viewfinder Focus Brackets (Screenshot target) -->
+    <!-- Top-Left -->
+    <path
+        android:pathData="M35,51 L35,47 C35,45.9 35.9,45 37,45 L41,45"
+        android:strokeColor="#0284C7"
+        android:strokeWidth="2"
+        android:strokeLineCap="round" />
+    <!-- Top-Right -->
+    <path
+        android:pathData="M57,45 L61,45 C62.1,45 63,45.9 63,47 L63,51"
+        android:strokeColor="#0284C7"
+        android:strokeWidth="2"
+        android:strokeLineCap="round" />
+    <!-- Bottom-Left -->
+    <path
+        android:pathData="M35,67 L35,71 C35,72.1 35.9,73 37,73 L41,73"
+        android:strokeColor="#0284C7"
+        android:strokeWidth="2"
+        android:strokeLineCap="round" />
+    <!-- Bottom-Right -->
+    <path
+        android:pathData="M57,73 L61,73 C62.1,73 63,72.1 63,71 L63,67"
+        android:strokeColor="#0284C7"
+        android:strokeWidth="2"
+        android:strokeLineCap="round" />
+
+    <!-- Center Camera Shutter / Aperture ring -->
+    <path
+        android:pathData="M49,59m-9,0a9,9 0,1,1 18,0a9,9 0,1,1 -18,0">
+        <aapt:attr name="android:fillColor">
+            <gradient
+                android:startX="40"
+                android:startY="50"
+                android:endX="58"
+                android:endY="68"
+                android:type="linear">
+                <item android:offset="0.0" android:color="#0284C7" />
+                <item android:offset="1.0" android:color="#0369A1" />
+            </gradient>
+        </aapt:attr>
+    </path>
+
+    <!-- Center Aperture Lens Highlight & Inner Core -->
+    <path
+        android:pathData="M49,59m-4.5,0a4.5,4.5 0,1,1 9,0a4.5,4.5 0,1,1 -9,0"
+        android:fillColor="#0B132B" />
+    <path
+        android:pathData="M50.5,57.5m-1.5,0a1.5,1.5 0,1,1 3,0a1.5,1.5 0,1,1 -3,0"
+        android:fillColor="#38BDF8" />
+
+    <!-- AI / OCR Text Extraction Sparkle (Top-Right) -->
+    <!-- Large 4-point sparkle -->
+    <path
+        android:pathData="M76,28 C76,32.5 72,35 72,35 C72,35 76,37.5 76,42 C76,37.5 80,35 80,35 C80,35 76,32.5 76,28 Z">
+        <aapt:attr name="android:fillColor">
+            <gradient
+                android:startX="72"
+                android:startY="28"
+                android:endX="80"
+                android:endY="42"
+                android:type="linear">
+                <item android:offset="0.0" android:color="#FFFFFF" />
+                <item android:offset="1.0" android:color="#38BDF8" />
+            </gradient>
+        </aapt:attr>
+    </path>
+    <!-- Small accent sparkle -->
+    <path
+        android:pathData="M83,43 C83,45 81,46 81,46 C81,46 83,47 83,49 C83,47 85,46 85,46 C85,46 83,45 83,43 Z"
+        android:fillColor="#BAE6FD" />
+
 </vector>

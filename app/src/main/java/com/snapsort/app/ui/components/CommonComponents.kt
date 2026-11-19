@@ -23,6 +23,11 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Shape
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.unit.Dp
+import com.snapsort.app.R
 import com.snapsort.app.data.model.CollectionWithCount
 import com.snapsort.app.data.model.ScreenshotEntity
 import com.snapsort.app.ui.theme.*
@@ -212,3 +217,33 @@ fun SearchInputBar(
         modifier = modifier.fillMaxWidth()
     )
 }
+
+@Composable
+fun AppLogo(
+    modifier: Modifier = Modifier,
+    size: Dp = 32.dp,
+    shape: Shape = RoundedCornerShape(size * 0.28f)
+) {
+    Box(
+        modifier = modifier
+            .size(size)
+            .clip(shape)
+            .background(
+                Brush.linearGradient(
+                    colors = listOf(
+                        Color(0xFF0284C7),
+                        Color(0xFF0369A1),
+                        Color(0xFF0B132B)
+                    )
+                )
+            ),
+        contentAlignment = Alignment.Center
+    ) {
+        androidx.compose.foundation.Image(
+            painter = painterResource(id = R.drawable.ic_launcher_foreground),
+            contentDescription = "SnapSort Logo",
+            modifier = Modifier.fillMaxSize()
+        )
+    }
+}
+

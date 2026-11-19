@@ -23,6 +23,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.snapsort.app.ui.components.AppLogo
 import com.snapsort.app.ui.theme.*
 
 @Composable
@@ -49,20 +50,7 @@ fun OnboardingScreen(
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
-                Box(
-                    modifier = Modifier
-                        .size(80.dp)
-                        .clip(RoundedCornerShape(20.dp))
-                        .background(ColorAccent),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text(
-                        text = "S",
-                        color = ColorOnAccent,
-                        fontWeight = FontWeight.ExtraBold,
-                        fontSize = 44.sp
-                    )
-                }
+                AppLogo(size = 88.dp)
 
                 Text(
                     text = "Welcome to SnapSort",
